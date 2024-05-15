@@ -1,0 +1,186 @@
+from pulp import *
+
+# Puan 1 ve Puan 2 değerlerini içeren liste
+puanlar = [
+    (76.28, None),
+    (75.68, None),
+    (75.44, None),
+    (75.14, None),
+    (74.79, None),
+    (73.6, None),
+    (73.11, None),
+    (73.09, None),
+    (72.43, None),
+    (71.92, None),
+    (70.84, None),
+    (70.8, None),
+    (70.23, None),
+    (70.15, None),
+    (69.17, None),
+    (71.65, None),
+    (75.65, None),
+    (75.6, None),
+    (75.06, None),
+    (74.52, None),
+    (74., None),
+    (72.46, None),
+    (72.45, None),
+    (73.09, None),
+    (73.09, None),
+    (73.06, None),
+    (73.06, None),
+    (73.01, None),
+    (72.87, None),
+    (73.01, None),
+    (73.96, None),
+    (73.67, None),
+    (71.26, None),
+    (71.35, None),
+    (71.31, None),
+    (70.98, None),
+    (70.85, None),
+    (70.8, None),
+    (70.18, None),
+    (68.95, None),
+    (69.58, None),
+    (67.38, None),
+    (67.33, None),
+    (64.98, None),
+    (72.52, None),
+    (71.97, None),
+    (71.92, None),
+    (71.38, None),
+    (70.77, None),
+    (70.18, None),
+    (70.18, None),
+    (69.94, None),
+    (69.6, None),
+    (69.44, None),
+    (69.09, None),
+    (69.09, None),
+    (68.47, None),
+    (68.47, None),
+    (68.47, None),
+    (67.92, None),
+    (67.92, None),
+    (67.92, None),
+    (67.38, None),
+    (66.77, None),
+    (66.72, None),
+    (66.72, None),
+    (66.15, None),
+    (66.15, None),
+    (65.72, None),
+    (65.67, None),
+    (65.64, None),
+    (65.13, None),
+    (65.12, None),
+    (65.06, None),
+    (63.35, None),
+    (61.01, None),
+    (60.47, None),
+    (60.47, None),
+    (60.35, None),
+    (66.8, None),
+    (59.26, None),
+    (57.81, None),
+    (68.47, None),
+    (58.84, None),
+    (67.38, None),
+    (67.35, None),
+    (66.79, None),
+    (66.72, None),
+    (66.32, None),
+    (66.24, None),
+    (65.6, None),
+    (64.04, None),
+    (62.29, None),
+    (62.18, None),
+    (61.64, None),
+    (61.64, None),
+    (61.64, None),
+    (61.56, None),
+    (61.56, None),
+    (61.56, None),
+    (61.56, None),
+    (61.52, None),
+    (61.52, None),
+    (61.09, None),
+    (61.09, None),
+    (61.01, None),
+    (61.01, None),
+    (61.01, None),
+    (60.98, None),
+    (60.47, None),
+    (60.47, None),
+    (60.47, None),
+    (60.47, None),
+    (59.97, None),
+    (58.18, None),
+    (56.07, None),
+    (53.16, None),
+    (50.21, None),
+    (58.96, None),
+    (69.72, None),
+    (66.32, None),
+    (63.38, None),
+    (60.47, None),
+    (59.97, None),
+    (59.92, None),
+    (59.44, None),
+    (59.35, None),
+    (58.8, None),
+    (58.8, None),
+    (58.76, None),
+    (58.26, None),
+    (58.21, None),
+    (58.18, None),
+    (58.18, None),
+    (57.11, None),
+    (56.58, None),
+    (56.55, None),
+    (56.5, None),
+    (56.47, None),
+    (55.89, None),
+    (49.64, None),
+    (37.76, None),
+    (49.6, None),
+    (49.59, None),
+    (48.98, None),
+    (48.58, None),
+    (45.68, None)
+]
+
+# Lineer programlama modeli oluşturma
+model = LpProblem("PuanOptimizasyonu", LpMaximize)
+
+# Puan 2 için değişkenlerin tanımlanması
+puan2_degiskenleri = LpVariable.dicts("Puan2", list(range(len(puanlar))), lowBound=0, upBound=20, cat='Integer')
+
+# Toplam puanlar
+toplam_puanlar = [puan1 + puan2_degiskenleri[i] for i, (puan1, _) in enumerate(puanlar)]
+
+# Hedef fonksiyonunun tanımlanması
+model += lpSum(toplam_puanlar)
+
+# Puan 1 ve Puan 2 toplamlarının birbirinden farklı olması kısıtı
+for i in range(len(puanlar)):
+    for j in range(i + 1, len(puanlar)):
+        model += toplam_puanlar[i] != toplam_puanlar[j]
+
+# Toplam puanları büyükten küçüğe sırala
+for i in range(len(puanlar) - 1):
+    model += toplam_puanlar[i] >= toplam_puanlar[i + 1]
+
+# Modeli çöz
+model.solve()
+
+# Çözümü ekrana yazdır
+for i, (_, puan2) in enumerate(puanlar):
+    puan2_value = puan2_degiskenleri[i].varValue
+    print(f"Puan 1: {puanlar[i][0]}, Puan 2: {puan2_value}, Toplam : {puanlar[i][0]+puan2_value}")
+
+# Çözümü ekrana yazdır
+for i, (_, puan2) in enumerate(puanlar):
+    puan2_value = puan2_degiskenleri[i].varValue
+    print(f"{puan2_value}")
