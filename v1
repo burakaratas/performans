@@ -1,0 +1,175 @@
+
+
+import pulp
+
+# Problem nesnesini oluştur
+prob = pulp.LpProblem("F_equals_zero", pulp.LpMinimize)  # Problemi F'nin 0'a eşitlenmesi olarak tanımla
+
+solver = pulp.getSolver('CPLEX_CMD')
+
+
+# Sabit değerler
+#B = [75, 73, 69, 74, 72]
+B = [72.39, 72.35, 71.98, 70.68, 74.16, 73.13, 72.12, 71.81, 70.8, 68.83, 70.6, 72.08, 69.06, 70.92, 73.78, 71.47, 65.47, 72.33, 67.5, 74.17, 70.01, 71.96, 73.44, 64.3, 69.24]
+n = len(B)
+A = list(range(1, n + 1))
+
+# M değerini tanımla
+M = 10000  # Bu değer problem boyutuna göre ayarlanabilir
+
+# Karar değişkenlerini tanımla
+x = [pulp.LpVariable(f'x{i+1}', lowBound=0, upBound=20, cat='Continuous') for i in range(n)]
+
+
+# D değerlerini tanımla
+D = [B[i] + x[i] for i in range(n)]
+
+# Sıralama (Rank) değişkenlerini tanımla
+rank = [pulp.LpVariable(f'rank{i+1}', lowBound=1, upBound=n, cat='Integer') for i in range(n)]
+
+# İkili değişkenleri tanımla
+y = [[pulp.LpVariable(f'y{i+1}_{j+1}', cat='Binary') for j in range(n)] for i in range(n)]
+
+# D ve rank arasındaki ilişkiyi tanımlamak için büyük M yöntemini kullanarak kısıtlamalar ekle
+for i in range(n):
+    for j in range(n):
+        if i != j:
+            prob += D[i] - D[j] + M * y[i][j] >= 1
+            prob += rank[j] - rank[i] + (n + 1) * y[i][j] <= n
+
+# Her y değişkeni için simetrik olmayan kısıtlamaları ekle
+for i in range(n):
+    for j in range(n):
+        if i != j:
+            prob += y[i][j] + y[j][i] == 1
+
+# Her sıralama değişkeninin tam sayı olmasını sağla
+for i in range(n):
+    prob += rank[i] == pulp.lpSum([y[i][j] for j in range(n)]) + 1
+
+# F değerlerini ve yardımcı değişkenleri tanımla
+F = [pulp.LpVariable(f'F{i+1}', lowBound=0, cat='Continuous') for i in range(n)]
+U = [pulp.LpVariable(f'U{i+1}', lowBound=0, cat='Continuous') for i in range(n)]
+
+# Mutlak değer kısıtlamaları ekle
+for i in range(n):
+    prob += U[i] >= A[i] - rank[i]
+    prob += U[i] >= rank[i] - A[i]
+    prob += F[i] == U[i]
+
+# # F'nin toplamını sıfıra eşitle
+# prob += pulp.lpSum([F[i] for i in range(n)]) == 0
+
+# Amaç fonksiyonunu ekle (F'nin toplamını minimize et)
+prob += pulp.lpSum([F[i] for i in range(n)])
+
+# # Her bir F değerini sıfıra eşitle
+# for i in range(n):
+#     prob += F[i] == 0
+
+
+# Problemi çöz
+prob.solve()
+
+# Çözüm durumunu yazdır
+print("Status:", pulp.LpStatus[prob.status])
+
+# Karar değişkenlerinin değerlerini yazdır
+for i in range(n):
+    print(f"x{i+1} =", pulp.value(x[i]))
+
+# Rank değişkenlerinin değerlerini yazdır
+for i in range(n):
+    print(f"rank{i+1} =", pulp.value(rank[i]))
+
+# Amaç fonksiyonunun değerini yazdır (F'nin toplamı)
+print("Objective Function Value (F'nin toplamı) =", pulp.value(prob.objective))
+
+
+
+
+
+
+# import pulp
+
+# # Problem nesnesini oluştur
+# prob = pulp.LpProblem("F_equals_zero", pulp.LpMinimize)  # Problemi F'nin 0'a eşitlenmesi olarak tanımla
+
+# # Değişken sayısı
+# n = 43
+
+# # M değerini tanımla
+# M = 10000  # Bu değer problem boyutuna göre ayarlanabilir
+
+# # Karar değişkenlerini tanımla
+# x = [pulp.LpVariable(f'x{i+1}', lowBound=0, upBound=20, cat='Continuous') for i in range(n)]
+
+# # Sabit değerler
+# B = [72.39, 72.35, 71.98, 70.68, 74.16, 73.13, 72.12, 71.81, 70.8, 68.83, 70.6, 72.08, 69.06, 70.92, 73.78, 71.47, 65.47, 72.33, 67.5, 74.17, 70.01, 71.96, 73.44, 64.3, 69.24, 74.19, 71.58, 69.45, 70.14, 67.73, 66.92, 73.56, 63.98, 65.44, 71.02, 63.76, 68.43, 57.21, 72.15, 69.84, 68.58, 62.45, 64.94]
+# A = list(range(1, n + 1))
+
+# # D değerlerini tanımla
+# D = [B[i] + x[i] for i in range(n)]
+
+# # Sıralama (Rank) değişkenlerini tanımla
+# rank = [pulp.LpVariable(f'rank{i+1}', lowBound=1, upBound=n, cat='Integer') for i in range(n)]
+
+# # İkili değişkenleri tanımla
+# y = [[pulp.LpVariable(f'y{i+1}_{j+1}', cat='Binary') for j in range(n)] for i in range(n)]
+
+# # D ve rank arasındaki ilişkiyi tanımlamak için büyük M yöntemini kullanarak kısıtlamalar ekle
+# for i in range(n):
+#     for j in range(n):
+#         if i != j:
+#             prob += D[i] - D[j] + M * y[i][j] >= 1
+#             prob += rank[j] - rank[i] + (n + 1) * y[i][j] <= n
+
+# # Her y değişkeni için simetrik olmayan kısıtlamaları ekle
+# for i in range(n):
+#     for j in range(n):
+#         if i != j:
+#             prob += y[i][j] + y[j][i] == 1
+
+# # Her sıralama değişkeninin tam sayı olmasını sağla
+# for i in range(n):
+#     prob += rank[i] == pulp.lpSum([y[i][j] for j in range(n)]) + 1
+
+# # F değerlerini ve yardımcı değişkenleri tanımla
+# F = [pulp.LpVariable(f'F{i+1}', lowBound=0, cat='Continuous') for i in range(n)]
+# U = [pulp.LpVariable(f'U{i+1}', lowBound=0, cat='Continuous') for i in range(n)]
+
+# # Mutlak değer kısıtlamaları ekle
+# for i in range(n):
+#     prob += U[i] >= A[i] - rank[i]
+#     prob += U[i] >= rank[i] - A[i]
+#     prob += F[i] == U[i]
+
+# # # F'nin toplamını sıfıra eşitle
+# # prob += pulp.lpSum([F[i] for i in range(n)]) == 0
+
+# # Amaç fonksiyonunu ekle (F'nin toplamını minimize et)
+# prob += pulp.lpSum([F[i] for i in range(n)])
+
+# # # Her bir F değerini sıfıra eşitle
+# # for i in range(n):
+# #     prob += F[i] == 0
+
+
+# # Problemi çöz
+# prob.solve()
+
+# # Çözüm durumunu yazdır
+# print("Status:", pulp.LpStatus[prob.status])
+
+# # Karar değişkenlerinin değerlerini yazdır
+# for i in range(n):
+#     print(f"x{i+1} =", pulp.value(x[i]))
+
+# # Rank değişkenlerinin değerlerini yazdır
+# for i in range(n):
+#     print(f"rank{i+1} =", pulp.value(rank[i]))
+
+# # Amaç fonksiyonunun değerini yazdır (F'nin toplamı)
+# print("Objective Function Value (F'nin toplamı) =", pulp.value(prob.objective))
+
+
