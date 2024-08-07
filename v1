@@ -1,175 +1,154 @@
+from pulp import *
+
+# Puan 1 değerlerini içeren liste
+# puanlar = [
+#     72.394000, 
+#     72.349640, 
+#     71.975040, 
+#     70.683880, 
+#     74.160632, 
+#     73.127040, 
+#     72.123880, 
+#     71.805640, 
+#     70.795880, 
+#     68.829640, 
+#     70.603880, 
+#     72.075880, 
+#     69.063040, 
+#     70.923880, 
+#     73.783600, 
+#     71.467880, 
+#     65.467880, 
+#     72.332696, 
+#     67.495040, 
+#     74.170000, 
+#     70.013640, 
+#     71.959040, 
+#     73.439032, 
+#     64.299880, 
+#     69.243880, 
+#     74.185856, 
+#     71.575040, 
+#     69.453640, 
+#     70.139880, 
+#     67.725640, 
+#     66.919040, 
+#     73.557432, 
+#     63.975040, 
+#     65.435880, 
+#     71.022656, 
+#     63.757640, 
+#     68.427880, 
+#     57.207000, 
+#     72.151040, 
+#     69.835880, 
+#     68.583040, 
+#     62.445640, 
+#     64.938000
+#     ]
+
+# puanlar = [
+#     76.275920, 
+#     75.683920, 
+#     75.435888, 
+#     75.139920, 
+#     74.787920, 
+#     73.603920, 
+#     73.107920, 
+#     73.091920, 
+#     72.431920, 
+#     71.919920, 
+#     70.835920, 
+#     70.803920, 
+#     70.227920, 
+#     70.147920, 
+#     69.171920, 
+#     71.652688, 
+#     75.651920, 
+#     75.603920, 
+#     75.059920, 
+#     74.515920, 
+#     74.003920, 
+#     72.463920, 
+#     72.451920, 
+#     73.093488, 
+#     73.091920, 
+#     73.059920, 
+#     73.059920, 
+#     73.011920, 
+#     72.867920, 
+#     73.011920, 
+#     73.955920, 
+#     73.667920, 
+#     71.263920, 
+#     71.347920, 
+#     71.311920, 
+#     70.979920, 
+#     70.851920, 
+#     70.803920, 
+#     70.175920, 
+#     68.947920, 
+#     69.583920, 
+#     67.379920, 
+#     67.331920, 
+#     64.979920, 
+#     72.515920, 
+#     71.971920, 
+#     71.923920, 
+#     71.379920, 
+#     70.771920, 
+#     70.179920, 
+#     70.179920, 
+#     69.939920, 
+#     69.603920, 
+#     69.439920, 
+#     69.091920, 
+#     69.091920, 
+#     68.467920, 
+#     68.467920, 
+#     68.467920, 
+#     67.923920, 
+#     67.923920, 
+#     67.923920, 
+#     67.379920
+# ]
+
+puanlar = [72.3566,72.8526,73.0766,70.1646,74.2286,73.3966,74.8526,73.0766,73.0126,72.0046,71.8126,69.8766,66.6766,74.7392,73.7984,72.9646,72.6766,72.5646,71.8926,71.8126,68.7726,68.0206,65.0766,75.728,75.4048,75.1312,73.2526,73.0606,71.0606,70.7246,70.5006,69.6366,66.6446,64.8046,73.6816,72.5648,71.3486,70.1326,68.5966,66.8206,64.3886,63.4926]
 
 
-import pulp
-
-# Problem nesnesini oluştur
-prob = pulp.LpProblem("F_equals_zero", pulp.LpMinimize)  # Problemi F'nin 0'a eşitlenmesi olarak tanımla
-
-solver = pulp.getSolver('CPLEX_CMD')
 
 
-# Sabit değerler
-#B = [75, 73, 69, 74, 72]
-B = [72.39, 72.35, 71.98, 70.68, 74.16, 73.13, 72.12, 71.81, 70.8, 68.83, 70.6, 72.08, 69.06, 70.92, 73.78, 71.47, 65.47, 72.33, 67.5, 74.17, 70.01, 71.96, 73.44, 64.3, 69.24]
-n = len(B)
-A = list(range(1, n + 1))
+# Lineer programlama modeli oluşturma
+model = LpProblem("PuanOptimizasyonu", LpMaximize)
 
-# M değerini tanımla
-M = 10000  # Bu değer problem boyutuna göre ayarlanabilir
+# Puan 2 için değişkenlerin tanımlanması
+puan2_degiskenleri = LpVariable.dicts("Puan2", list(range(len(puanlar))), lowBound=0, upBound=20, cat='Integer')
 
-# Karar değişkenlerini tanımla
-x = [pulp.LpVariable(f'x{i+1}', lowBound=0, upBound=20, cat='Continuous') for i in range(n)]
+# Toplam puanlar
+toplam_puanlar = [puan1 + puan2_degiskenleri[i] for i, puan1 in enumerate(puanlar)]
 
+# Hedef fonksiyonunun tanımlanması
+model += lpSum(toplam_puanlar)
 
-# D değerlerini tanımla
-D = [B[i] + x[i] for i in range(n)]
+# Puan 1 ve Puan 2 toplamlarının birbirinden farklı olması kısıtı
+for i in range(len(puanlar)):
+    for j in range(i + 1, len(puanlar)):
+        model += toplam_puanlar[i] != toplam_puanlar[j]
 
-# Sıralama (Rank) değişkenlerini tanımla
-rank = [pulp.LpVariable(f'rank{i+1}', lowBound=1, upBound=n, cat='Integer') for i in range(n)]
+# Toplam puanları büyükten küçüğe sırala
+for i in range(len(puanlar) - 1):
+    model += toplam_puanlar[i] >= toplam_puanlar[i + 1]
 
-# İkili değişkenleri tanımla
-y = [[pulp.LpVariable(f'y{i+1}_{j+1}', cat='Binary') for j in range(n)] for i in range(n)]
+# Modeli çöz
+model.solve()
 
-# D ve rank arasındaki ilişkiyi tanımlamak için büyük M yöntemini kullanarak kısıtlamalar ekle
-for i in range(n):
-    for j in range(n):
-        if i != j:
-            prob += D[i] - D[j] + M * y[i][j] >= 1
-            prob += rank[j] - rank[i] + (n + 1) * y[i][j] <= n
+# Çözümü ekrana yazdır
+for i, puan1 in enumerate(puanlar):
+    puan2_value = puan2_degiskenleri[i].varValue
+    print(f"Puan 1: {puan1}, Puan 2: {puan2_value}, Toplam: {puan1 + puan2_value}")
 
-# Her y değişkeni için simetrik olmayan kısıtlamaları ekle
-for i in range(n):
-    for j in range(n):
-        if i != j:
-            prob += y[i][j] + y[j][i] == 1
-
-# Her sıralama değişkeninin tam sayı olmasını sağla
-for i in range(n):
-    prob += rank[i] == pulp.lpSum([y[i][j] for j in range(n)]) + 1
-
-# F değerlerini ve yardımcı değişkenleri tanımla
-F = [pulp.LpVariable(f'F{i+1}', lowBound=0, cat='Continuous') for i in range(n)]
-U = [pulp.LpVariable(f'U{i+1}', lowBound=0, cat='Continuous') for i in range(n)]
-
-# Mutlak değer kısıtlamaları ekle
-for i in range(n):
-    prob += U[i] >= A[i] - rank[i]
-    prob += U[i] >= rank[i] - A[i]
-    prob += F[i] == U[i]
-
-# # F'nin toplamını sıfıra eşitle
-# prob += pulp.lpSum([F[i] for i in range(n)]) == 0
-
-# Amaç fonksiyonunu ekle (F'nin toplamını minimize et)
-prob += pulp.lpSum([F[i] for i in range(n)])
-
-# # Her bir F değerini sıfıra eşitle
-# for i in range(n):
-#     prob += F[i] == 0
-
-
-# Problemi çöz
-prob.solve()
-
-# Çözüm durumunu yazdır
-print("Status:", pulp.LpStatus[prob.status])
-
-# Karar değişkenlerinin değerlerini yazdır
-for i in range(n):
-    print(f"x{i+1} =", pulp.value(x[i]))
-
-# Rank değişkenlerinin değerlerini yazdır
-for i in range(n):
-    print(f"rank{i+1} =", pulp.value(rank[i]))
-
-# Amaç fonksiyonunun değerini yazdır (F'nin toplamı)
-print("Objective Function Value (F'nin toplamı) =", pulp.value(prob.objective))
-
-
-
-
-
-
-# import pulp
-
-# # Problem nesnesini oluştur
-# prob = pulp.LpProblem("F_equals_zero", pulp.LpMinimize)  # Problemi F'nin 0'a eşitlenmesi olarak tanımla
-
-# # Değişken sayısı
-# n = 43
-
-# # M değerini tanımla
-# M = 10000  # Bu değer problem boyutuna göre ayarlanabilir
-
-# # Karar değişkenlerini tanımla
-# x = [pulp.LpVariable(f'x{i+1}', lowBound=0, upBound=20, cat='Continuous') for i in range(n)]
-
-# # Sabit değerler
-# B = [72.39, 72.35, 71.98, 70.68, 74.16, 73.13, 72.12, 71.81, 70.8, 68.83, 70.6, 72.08, 69.06, 70.92, 73.78, 71.47, 65.47, 72.33, 67.5, 74.17, 70.01, 71.96, 73.44, 64.3, 69.24, 74.19, 71.58, 69.45, 70.14, 67.73, 66.92, 73.56, 63.98, 65.44, 71.02, 63.76, 68.43, 57.21, 72.15, 69.84, 68.58, 62.45, 64.94]
-# A = list(range(1, n + 1))
-
-# # D değerlerini tanımla
-# D = [B[i] + x[i] for i in range(n)]
-
-# # Sıralama (Rank) değişkenlerini tanımla
-# rank = [pulp.LpVariable(f'rank{i+1}', lowBound=1, upBound=n, cat='Integer') for i in range(n)]
-
-# # İkili değişkenleri tanımla
-# y = [[pulp.LpVariable(f'y{i+1}_{j+1}', cat='Binary') for j in range(n)] for i in range(n)]
-
-# # D ve rank arasındaki ilişkiyi tanımlamak için büyük M yöntemini kullanarak kısıtlamalar ekle
-# for i in range(n):
-#     for j in range(n):
-#         if i != j:
-#             prob += D[i] - D[j] + M * y[i][j] >= 1
-#             prob += rank[j] - rank[i] + (n + 1) * y[i][j] <= n
-
-# # Her y değişkeni için simetrik olmayan kısıtlamaları ekle
-# for i in range(n):
-#     for j in range(n):
-#         if i != j:
-#             prob += y[i][j] + y[j][i] == 1
-
-# # Her sıralama değişkeninin tam sayı olmasını sağla
-# for i in range(n):
-#     prob += rank[i] == pulp.lpSum([y[i][j] for j in range(n)]) + 1
-
-# # F değerlerini ve yardımcı değişkenleri tanımla
-# F = [pulp.LpVariable(f'F{i+1}', lowBound=0, cat='Continuous') for i in range(n)]
-# U = [pulp.LpVariable(f'U{i+1}', lowBound=0, cat='Continuous') for i in range(n)]
-
-# # Mutlak değer kısıtlamaları ekle
-# for i in range(n):
-#     prob += U[i] >= A[i] - rank[i]
-#     prob += U[i] >= rank[i] - A[i]
-#     prob += F[i] == U[i]
-
-# # # F'nin toplamını sıfıra eşitle
-# # prob += pulp.lpSum([F[i] for i in range(n)]) == 0
-
-# # Amaç fonksiyonunu ekle (F'nin toplamını minimize et)
-# prob += pulp.lpSum([F[i] for i in range(n)])
-
-# # # Her bir F değerini sıfıra eşitle
-# # for i in range(n):
-# #     prob += F[i] == 0
-
-
-# # Problemi çöz
-# prob.solve()
-
-# # Çözüm durumunu yazdır
-# print("Status:", pulp.LpStatus[prob.status])
-
-# # Karar değişkenlerinin değerlerini yazdır
-# for i in range(n):
-#     print(f"x{i+1} =", pulp.value(x[i]))
-
-# # Rank değişkenlerinin değerlerini yazdır
-# for i in range(n):
-#     print(f"rank{i+1} =", pulp.value(rank[i]))
-
-# # Amaç fonksiyonunun değerini yazdır (F'nin toplamı)
-# print("Objective Function Value (F'nin toplamı) =", pulp.value(prob.objective))
-
+# Sadece Puan 2 değerlerini yazdır
+for i in range(len(puanlar)):
+    puan2_value = puan2_degiskenleri[i].varValue
+    print(f"{puan2_value}")
 
