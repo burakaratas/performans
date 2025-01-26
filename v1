@@ -133,7 +133,9 @@ model += lpSum(toplam_puanlar)
 # Puan 1 ve Puan 2 toplamlarının birbirinden farklı olması kısıtı
 for i in range(len(puanlar)):
     for j in range(i + 1, len(puanlar)):
-        model += toplam_puanlar[i] != toplam_puanlar[j]
+        # model += toplam_puanlar[i] != toplam_puanlar[j]
+        # Toplam puanlar arasında en az 1 birim fark olması (üst satır yerine bunu ekledim deepsek ile :)
+        model += toplam_puanlar[i] >= toplam_puanlar[j] + 0.0001
 
 # Toplam puanları büyükten küçüğe sırala
 for i in range(len(puanlar) - 1):
@@ -143,12 +145,15 @@ for i in range(len(puanlar) - 1):
 model.solve()
 
 # Çözümü ekrana yazdır
-for i, puan1 in enumerate(puanlar):
-    puan2_value = puan2_degiskenleri[i].varValue
-    print(f"Puan 1: {puan1}, Puan 2: {puan2_value}, Toplam: {puan1 + puan2_value}")
+if LpStatus[model.status] == "Optimal":
+    for i, puan1 in enumerate(puanlar):
+        puan2_value = puan2_degiskenleri[i].varValue
+        print(f"Puan 1: {puan1}, Puan 2: {puan2_value}, Toplam: {puan1 + puan2_value}")
 
-# Sadece Puan 2 değerlerini yazdır
-for i in range(len(puanlar)):
-    puan2_value = puan2_degiskenleri[i].varValue
-    print(f"{puan2_value}")
-
+    # Sadece Puan 2 değerlerini yazdır
+    print("\nSadece Puan 2 Değerleri:")
+    for i in range(len(puanlar)):
+        puan2_value = puan2_degiskenleri[i].varValue
+        print(f"{puan2_value}")
+else:
+    print("Model çözülemedi veya optimal değil.")
